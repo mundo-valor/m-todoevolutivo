@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Método Evolutivo (Método del Costo)</title>
+  <!-- Chart.js para el gráfico interactivo -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-dark: #172554;
+      --primary-light: #3b82f6;
+      --secondary: #0d9488;
+      --accent: #d97706;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #cbd5e1;
+      --input-bg: #fefce8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding-bottom: 50px;
+    }
+    header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      color: white;
+      padding: 35px 20px;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    header h1 {
+      font-size: 2.1rem;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .badge {
+      display: inline-block;
+      background-color: rgba(255, 255, 255, 0.15);
+      padding: 4px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: -25px auto 0 auto;
+      padding: 0 20px;
+    }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+    }
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02);
+      border: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 1.2rem;
+      color: var(--primary);
+      margin-bottom: 16px;
+      font-weight: 700;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin: 16px 0 10px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 550px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #334155;
+    }
+    .input-group {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+    .input-prefix {
+      position: absolute;
+      left: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+      pointer-events: none;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px 10px 8px 65px;
+      border: 1px solid #94a3b8;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      background: var(--input-bg);
+      color: #0f172a;
+      font-weight: 500;
+    }
+    .input-group.prefix-short input[type="text"] {
+      padding-left: 45px;
+    }
+    select {
+      padding-left: 10px;
+      cursor: pointer;
+    }
+    input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px dashed #e2e8f0;
+      font-size: 0.9rem;
+    }
+    .result-row.highlight {
+      background-color: #f8fafc;
+      padding: 8px 8px;
+      border-radius: 6px;
+      border-bottom: none;
+      margin: 4px 0;
+      font-weight: 600;
+    }
+    .result-label {
+      color: #475569;
+    }
+    .result-value {
+      font-weight: 600;
+      color: #0f172a;
+      text-align: right;
+    }
+    .total-box {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border: 2px solid #93c5fd;
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+      text-align: center;
+    }
+    .total-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: var(--primary);
+    }
+    .total-amount {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      margin: 6px 0;
+    }
+    .unit-value-box {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--secondary);
+      margin-top: 4px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      border: none;
+    }
+    .btn-print {
+      background-color: var(--primary);
+      color: white;
+    }
+    .btn-print:hover {
+      background-color: var(--primary-dark);
+    }
+    .btn-paypal {
+      background-color: #0070ba;
+      color: white;
+    }
+    .btn-paypal:hover {
+      background-color: #005ea6;
+    }
+    .full-width-card {
+      margin-top: 25px;
+      background-color: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .full-width-card h3 {
+      color: var(--primary);
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 400px;
+      margin-top: 10px;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 10px;
+    }
+    table.data-table th, table.data-table td {
+      padding: 8px 12px;
+      border: 1px solid #e2e8f0;
+    }
+    table.data-table th:nth-child(1), table.data-table td:nth-child(1),
+    table.data-table th:nth-child(2), table.data-table td:nth-child(2),
+    table.data-table th:nth-child(3), table.data-table td:nth-child(3) {
+      text-align: center;
+    }
+    table.data-table th:nth-child(4), table.data-table td:nth-child(4) {
+      text-align: left;
+    }
+    table.data-table th {
+      background-color: #f1f5f9;
+      color: #334155;
+      font-weight: 600;
+    }
+    table.data-table tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    footer {
+      text-align: center;
+      margin-top: 35px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Reglas de impresión optimizadas */
+    @page {
+      size: A4 portrait;
+      margin: 12mm 10mm 12mm 10mm;
+    }
+
+    @media print {
+      body {
+        background-color: #fff !important;
+        color: #000 !important;
+        padding: 0;
+        margin: 0;
+      }
+      header {
+        background: none !important;
+        color: #000 !important;
+        padding: 10px 0;
+        border-bottom: 2px solid #1e3a8a;
+        box-shadow: none;
+      }
+      header h1 {
+        font-size: 1.6rem;
+        color: #1e3a8a;
+      }
+      .badge {
+        background-color: #f1f5f9;
+        color: #1e3a8a;
+        border: 1px solid #cbd5e1;
+      }
+      .btn-group, footer {
+        display: none !important;
+      }
+      .container {
+        max-width: 100% !important;
+        margin: 10px auto 0 auto !important;
+        padding: 0 !important;
+      }
+      .main-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 15px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .card, .full-width-card {
+        box-shadow: none !important;
+        border: 1px solid #94a3b8 !important;
+        padding: 16px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .total-box {
+        background: #f8fafc !important;
+        border: 2px solid #1e3a8a !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .full-width-card {
+        margin-top: 15px !important;
+      }
+      input[type="text"], select {
+        background: none !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #000 !important;
+      }
+      .chart-container {
+        height: 320px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge">ABNT NBR 14653-2 · Depreciación Ross-Heideck</div>
+    <h1>Método Evolutivo (Método del Costo)</h1>
+  </header>
+
+  <div class="container">
+    <div class="main-grid">
+      
+      <!-- Entrada de Datos -->
+      <div class="card">
+        <div class="card-title">
+          <span>Variables de Entrada</span>
+        </div>
+
+        <!-- 1. Terreno -->
+        <div class="section-title">1. Terreno</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="at">Área del Terreno (At):</label>
+            <div class="input-group prefix-short">
+              <span class="input-prefix">m²</span>
+              <input type="text" id="at" value="212,42" oninput="calcular()">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="vut">Valor Unitario Terreno (Vut):</label>
+            <div class="input-group">
+              <span class="input-prefix">UM/m²</span>
+              <input type="text" id="vut" value="19.300,00" oninput="calcular()">
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Construcción -->
+        <div class="section-title">2. Construcción a Nuevo</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="ac">Área Construcción (Ac):</label>
+            <div class="input-group prefix-short">
+              <span class="input-prefix">m²</span>
+              <input type="text" id="ac" value="102,55" oninput="calcular()">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="cuc">Costo Unitario Constr. (CUC):</label>
+            <div class="input-group">
+              <span class="input-prefix">UM/m²</span>
+              <input type="text" id="cuc" value="113.266,75" oninput="calcular()">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Parámetros Ross-Heideck -->
+        <div class="section-title">3. Parámetros Ross-Heideck</div>
+        <div class="form-grid">
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="estado">Estado de Conservación:</label>
+            <select id="estado" onchange="calcular()">
+              <option value="0">1 - Óptimo (CH = 0,0000)</option>
+              <option value="0.0032">1.5 - Muy Bueno (CH = 0,0032)</option>
+              <option value="0.0249" selected>2 - Bueno (CH = 0,0249)</option>
+              <option value="0.0809">2.5 - Intermedio (CH = 0,0809)</option>
+              <option value="0.1817">3 - Regular (CH = 0,1817)</option>
+              <option value="0.3309">3.5 - Deficiente (CH = 0,3309)</option>
+              <option value="0.5249">4 - Malo (CH = 0,5249)</option>
+              <option value="0.7532">4.5 - Muy Malo (CH = 0,7532)</option>
+              <option value="1.0">5 - Demolición (CH = 1,0000)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="rescate">Factor Rescate (r):</label>
+            <div class="input-group prefix-short">
+              <span class="input-prefix">%</span>
+              <input type="text" id="rescate" value="10,00" oninput="calcular()">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="ea">Edad Aparente (ea):</label>
+            <select id="ea" onchange="calcular()">
+              <!-- Opciones generadas de 0 a 100 años -->
+            </select>
+          </div>
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="vu">Vida Útil (vu):</label>
+            <select id="vu" onchange="calcular()">
+              <!-- Opciones generadas de 5 a 100 en múltiplos de 5 -->
+            </select>
+          </div>
+        </div>
+
+        <!-- 4. Máquinas, Equipos y Mercado -->
+        <div class="section-title">4. Equipos y Comercialización</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="vme">Máquinas y Equipos (Vme):</label>
+            <div class="input-group prefix-short">
+              <span class="input-prefix">UM</span>
+              <input type="text" id="vme" value="0,00" oninput="calcular()">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="fc">Factor Mercado (FC):</label>
+            <div class="input-group prefix-short">
+              <span class="input-prefix">Coef</span>
+              <input type="text" id="fc" value="1,35" oninput="calcular()">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Memoria de Cálculo y Resultados -->
+      <div class="card">
+        <div class="card-title">
+          <span>Memoria de Cálculo y Resultados</span>
+        </div>
+
+        <!-- Resultados Terreno -->
+        <div class="result-row highlight">
+          <span class="result-label"><strong>Valor del Terreno (Vt = At · Vut):</strong></span>
+          <span class="result-value" id="res-vt">UM 4.099.706,00</span>
+        </div>
+
+        <!-- Resultados Construcción y Depreciación -->
+        <div class="result-row">
+          <span class="result-label">Valor Constr. a Nuevo (Vcn = Ac · CUC):</span>
+          <span class="result-value" id="res-vcn">UM 11.615.505,21</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Valor de Rescate (Vr = r · Vcn):</span>
+          <span class="result-value" id="res-vr">UM 1.161.550,52</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Relación Edad / Vida Útil (ea / vu):</span>
+          <span class="result-value" id="res-rel">0,0500 (5,00%)</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Función Ross [α = 0.5 · (x + x²)]:</span>
+          <span class="result-value" id="res-alpha">0,0263 (2,63%)</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Factor Heideck (CH):</span>
+          <span class="result-value" id="res-ch">0,0249</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Factor Depreciación [δ = α + (1-α)·CH]:</span>
+          <span class="result-value" id="res-delta">0,0505 (5,05%)</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Monto de Depreciación Físico-Funcional:</span>
+          <span class="result-value" id="res-dep-monto" style="color: #dc2626;">- UM 527.886,82</span>
+        </div>
+        <div class="result-row highlight">
+          <span class="result-label"><strong>Valor Construcción Depreciada (Vc):</strong></span>
+          <span class="result-value" id="res-vc">UM 11.087.618,40</span>
+        </div>
+
+        <!-- Máquinas y Subtotal -->
+        <div class="result-row">
+          <span class="result-label">Valor Máquinas y Equipos (Vme):</span>
+          <span class="result-value" id="res-vme">UM 0,00</span>
+        </div>
+        <div class="result-row highlight">
+          <span class="result-label"><strong>Subtotal Físico (Vtcme = Vt + Vc + Vme):</strong></span>
+          <span class="result-value" id="res-vtcme">UM 15.187.324,40</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Factor de Mercado / Comercialización (FC):</span>
+          <span class="result-value" id="res-fc">1,35</span>
+        </div>
+
+        <!-- Total Inmueble -->
+        <div class="total-box">
+          <div class="total-title">Valor Total del Inmueble</div>
+          <div class="total-amount" id="res-vi">UM 20.502.887,93</div>
+          <div class="unit-value-box" id="res-vui">Valor Unitario: UM 199.930,65 / m²</div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-print" onclick="window.print()">
+            Imprimir Reporte
+          </button>
+          <a href="https://paypal.me/spilimcurso" target="_blank" rel="noopener noreferrer" class="btn btn-paypal">
+            Donar con PayPal
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Gráfico con proyección en ambos ejes -->
+    <div class="full-width-card">
+      <h3>Curva de Depreciación Ross-Heideck</h3>
+      <div class="chart-container">
+        <canvas id="depreciationChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Tabla Normativa con Columnas Centradas -->
+    <div class="full-width-card">
+      <h3>Estados de Conservación y Coeficientes de Heideck (CH)</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Estado</th>
+            <th>Condición</th>
+            <th>Coeficiente (CH)</th>
+            <th>Descripción del Estado Físico</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Óptimo</td><td>0,0000</td><td>Nuevo, sin reparaciones necesarias.</td></tr>
+          <tr><td>1.5</td><td>Muy Bueno</td><td>0,0032</td><td>Excelente mantenimiento y conservación.</td></tr>
+          <tr><td>2</td><td>Bueno</td><td>0,0249</td><td>Mantenimiento normal, reparaciones menores.</td></tr>
+          <tr><td>2.5</td><td>Intermedio</td><td>0,0809</td><td>Requiere pequeñas reformas o pinturas.</td></tr>
+          <tr><td>3</td><td>Regular</td><td>0,1817</td><td>Reparaciones simples a medianas necesarias.</td></tr>
+          <tr><td>3.5</td><td>Deficiente</td><td>0,3309</td><td>Falta de mantenimiento evidente.</td></tr>
+          <tr><td>4</td><td>Malo</td><td>0,5249</td><td>Reparaciones importantes requeridas.</td></tr>
+          <tr><td>4.5</td><td>Muy Malo</td><td>0,7532</td><td>Requiere reformas estructurales mayúsculas.</td></tr>
+          <tr><td>5</td><td>Demolición</td><td>1,0000</td><td>Sin valor constructivo residual utilizable.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer>
+      Método Evolutivo (Método del Costo) · Basado en ABNT NBR 14653-2 y Modelo Ross-Heideck · Formato: Miles en puntos (.) y decimales en coma (,)
+    </footer>
+  </div>
+
+  <script>
+    let chartInstance = null;
+
+    // Inicializar listas desplegables de edad aparente y vida útil
+    function poblarSelectores() {
+      const selectEa = document.getElementById('ea');
+      selectEa.innerHTML = '';
+      for (let i = 0; i <= 100; i++) {
+        let opt = document.createElement('option');
+        opt.value = i;
+        opt.innerText = i + ' ' + (i === 1 ? 'año' : 'años');
+        if (i === 3) opt.selected = true;
+        selectEa.appendChild(opt);
+      }
+
+      const selectVu = document.getElementById('vu');
+      selectVu.innerHTML = '';
+      for (let j = 5; j <= 100; j += 5) {
+        let opt = document.createElement('option');
+        opt.value = j;
+        opt.innerText = j + ' años';
+        if (j === 60) opt.selected = true;
+        selectVu.appendChild(opt);
+      }
+    }
+
+    // Formateadores numéricos: Miles en puntos (.) y decimales en coma (,)
+    function parseNumero(str) {
+      if (!str) return 0;
+      let clean = str.toString().trim().replace(/\./g, '').replace(',', '.');
+      let val = parseFloat(clean);
+      return isNaN(val) ? 0 : val;
+    }
+
+    function formatNumero(val, decimals = 2) {
+      if (isNaN(val)) val = 0;
+      let parts = val.toFixed(decimals).split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      return parts.join(',');
+    }
+
+    function calcular() {
+      // 1. Terreno
+      const at = parseNumero(document.getElementById('at').value);
+      const vut = parseNumero(document.getElementById('vut').value);
+      const vt = at * vut;
+
+      // 2. Construcción a nuevo
+      const ac = parseNumero(document.getElementById('ac').value);
+      const cuc = parseNumero(document.getElementById('cuc').value);
+      const vcn = ac * cuc;
+
+      // 3. Parámetros Ross-Heideck
+      const rescatePct = parseNumero(document.getElementById('rescate').value);
+      const r = rescatePct / 100;
+      const vr = r * vcn;
+
+      const ea = parseFloat(document.getElementById('ea').value) || 0;
+      const vu = parseFloat(document.getElementById('vu').value) || 60;
+      const rel = (vu > 0) ? (ea / vu) : 0;
+
+      // Función Ross: alpha = 0.5 * ( (ea/vu) + (ea/vu)^2 )
+      const alpha = 0.5 * (rel + Math.pow(rel, 2));
+
+      // Factor Heideck desde selector
+      const ch = parseFloat(document.getElementById('estado').value) || 0;
+
+      // Factor Ross-Heideck: delta = alpha + (1 - alpha) * ch
+      const delta = alpha + (1 - alpha) * ch;
+
+      // Depreciación y Valor Construcción Depreciada: Vc = Vcn - delta * (Vcn - Vr)
+      const depMonto = delta * (vcn - vr);
+      const vc = Math.max(vr, vcn - depMonto);
+
+      // 4. Máquinas y Factor Comercialización (Solo 2 decimales)
+      const vme = parseNumero(document.getElementById('vme').value);
+      const vtcme = vt + vc + vme;
+      const fc = parseNumero(document.getElementById('fc').value);
+      const vi = vtcme * fc;
+
+      // Valor unitario del inmueble basado en su área de construcción
+      const vui = (ac > 0) ? (vi / ac) : 0;
+
+      // Renderizar valores en pantalla
+      document.getElementById('res-vt').innerText = 'UM ' + formatNumero(vt, 2);
+      document.getElementById('res-vcn').innerText = 'UM ' + formatNumero(vcn, 2);
+      document.getElementById('res-vr').innerText = 'UM ' + formatNumero(vr, 2);
+      document.getElementById('res-rel').innerText = formatNumero(rel, 4) + ' (' + formatNumero(rel * 100, 2) + '%)';
+      document.getElementById('res-alpha').innerText = formatNumero(alpha, 4) + ' (' + formatNumero(alpha * 100, 2) + '%)';
+      document.getElementById('res-ch').innerText = formatNumero(ch, 4);
+      document.getElementById('res-delta').innerText = formatNumero(delta, 4) + ' (' + formatNumero(delta * 100, 2) + '%)';
+      document.getElementById('res-dep-monto').innerText = '- UM ' + formatNumero(depMonto, 2);
+      document.getElementById('res-vc').innerText = 'UM ' + formatNumero(vc, 2);
+      document.getElementById('res-vme').innerText = 'UM ' + formatNumero(vme, 2);
+      document.getElementById('res-vtcme').innerText = 'UM ' + formatNumero(vtcme, 2);
+      document.getElementById('res-fc').innerText = formatNumero(fc, 2);
+      document.getElementById('res-vi').innerText = 'UM ' + formatNumero(vi, 2);
+      document.getElementById('res-vui').innerText = 'Valor Unitario: UM ' + formatNumero(vui, 2) + ' / m²';
+
+      // Actualizar Gráfico garantizando que la curva pase estrictamente por el punto (rel, vc)
+      actualizarGrafico(vcn, vr, rel, delta, vc);
+    }
+
+    function actualizarGrafico(vcn, vr, relActual, deltaActual, vcActual) {
+      const puntosCurva = [];
+      const K = vcn - vr;
+      const x0 = relActual;
+
+      // Construcción del trazado paramétrico exacto que absorbe el estado de conservación:
+      // Pasa exactamente por (0, Vcn), (x0, Vc) y (1, Vr)
+      let B, C;
+      if (x0 <= 0 || x0 >= 1) {
+        // En los límites teóricos se utiliza la función parabólica base
+        B = -0.5 * K;
+        C = -0.5 * K;
+      } else {
+        C = (K * (x0 - deltaActual)) / (x0 * (x0 - 1));
+        B = -K - C;
+      }
+
+      for (let p = 0; p <= 100; p += 1) {
+        let x = p / 100;
+        let v;
+        if (p === 0) {
+          v = vcn;
+        } else if (p === 100) {
+          v = vr;
+        } else if (Math.abs(x - x0) < 0.0001) {
+          v = vcActual; // Garantía de concordancia numérica absoluta en el punto
+        } else {
+          v = vcn + B * x + C * Math.pow(x, 2);
+        }
+        puntosCurva.push({ x: p, y: Math.max(vr, Math.min(vcn, v)) });
+      }
+
+      const puntoInmueble = [{ x: relActual * 100, y: vcActual }];
+
+      // Plugin personalizado para trazar líneas de proyección con valores exactos en ambos ejes
+      const projectionLinesPlugin = {
+        id: 'projectionLinesPlugin',
+        afterDatasetsDraw(chart) {
+          const { ctx, scales: { x, y } } = chart;
+          const px = x.getPixelForValue(relActual * 100);
+          const py = y.getPixelForValue(vcActual);
+          const yBottom = y.getPixelForValue(0);
+          const xLeft = x.getPixelForValue(0);
+
+          if (isNaN(px) || isNaN(py)) return;
+
+          ctx.save();
+
+          // 1. Línea discontinua hacia el Eje X (Vertical)
+          ctx.beginPath();
+          ctx.setLineDash([4, 4]);
+          ctx.strokeStyle = '#dc2626';
+          ctx.lineWidth = 1.5;
+          ctx.moveTo(px, py);
+          ctx.lineTo(px, yBottom);
+          ctx.stroke();
+
+          // 2. Línea discontinua hacia el Eje Y (Horizontal)
+          ctx.beginPath();
+          ctx.setLineDash([4, 4]);
+          ctx.strokeStyle = '#dc2626';
+          ctx.lineWidth = 1.5;
+          ctx.moveTo(px, py);
+          ctx.lineTo(xLeft, py);
+          ctx.stroke();
+
+          // 3. Etiqueta al final de la línea en el Eje X (ea/vu en %)
+          ctx.setLineDash([]);
+          const textX = `ea/vu: ${formatNumero(relActual * 100, 2)}%`;
+          ctx.font = 'bold 11px "Segoe UI", sans-serif';
+          const textWidthX = ctx.measureText(textX).width + 12;
+          const boxHeightX = 20;
+          const boxPosX = Math.max(xLeft, Math.min(px - textWidthX / 2, chart.width - textWidthX - 10));
+          const boxPosY = yBottom + 4;
+
+          ctx.fillStyle = '#dc2626';
+          ctx.beginPath();
+          ctx.roundRect(boxPosX, boxPosY, textWidthX, boxHeightX, 4);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.fillText(textX, boxPosX + textWidthX / 2, boxPosY + 14);
+
+          // 4. Etiqueta al final de la línea en el Eje Y (Valor de la construcción depreciada Vc)
+          const textY = `Vc: UM ${formatNumero(vcActual, 2)}`;
+          ctx.font = 'bold 11px "Segoe UI", sans-serif';
+          const textWidthY = ctx.measureText(textY).width + 12;
+          const boxHeightY = 20;
+          const boxPosY_Y = Math.max(10, Math.min(py - boxHeightY / 2, yBottom - boxHeightY));
+          const boxPosX_Y = xLeft + 6;
+
+          ctx.fillStyle = '#dc2626';
+          ctx.beginPath();
+          ctx.roundRect(boxPosX_Y, boxPosY_Y, textWidthY, boxHeightY, 4);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.fillText(textY, boxPosX_Y + textWidthY / 2, boxPosY_Y + 14);
+
+          ctx.restore();
+        }
+      };
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      const ctx = document.getElementById('depreciationChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              type: 'line',
+              label: 'Curva de Depreciación',
+              data: puntosCurva,
+              borderColor: '#1e3a8a',
+              backgroundColor: 'rgba(30, 58, 138, 0.05)',
+              borderWidth: 3,
+              pointRadius: 0,
+              fill: true,
+              tension: 0.2
+            },
+            {
+              type: 'scatter',
+              label: 'Inmueble Evaluado',
+              data: puntoInmueble,
+              backgroundColor: '#dc2626',
+              borderColor: '#ffffff',
+              borderWidth: 2,
+              pointRadius: 7,
+              pointHoverRadius: 9
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              enabled: false
+            }
+          },
+          scales: {
+            x: {
+              type: 'linear',
+              min: 0,
+              max: 100,
+              title: {
+                display: true,
+                text: 'Edad / Vida Útil (%)',
+                font: { size: 12, weight: 'bold' }
+              },
+              ticks: {
+                callback: function(val) {
+                  return val + '%';
+                }
+              },
+              grid: { color: '#e2e8f0' }
+            },
+            y: {
+              min: 0,
+              suggestedMax: vcn * 1.05,
+              title: {
+                display: true,
+                text: 'Valor de la Construcción (UM)',
+                font: { size: 12, weight: 'bold' }
+              },
+              ticks: {
+                callback: function(val) {
+                  return 'UM ' + formatNumero(val, 0);
+                }
+              },
+              grid: { color: '#e2e8f0' }
+            }
+          }
+        },
+        plugins: [projectionLinesPlugin]
+      });
+    }
+
+    window.onload = function() {
+      poblarSelectores();
+      calcular();
+    };
+  </script>
+</body>
+</html>
